@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>📚 Library System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+      border-collapse: collapse;
+      padding: 8px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    input, button {
+      margin: 6px 0;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #message {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    h2, h3 {
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📚 Book Availability</h2>
+  <div id="bookList"><em>Loading book list, please wait...</em></div>
+
+  <h3>📥 Borrow or 📤 Return a Book</h3>
+  <form id="actionForm">
+    <input type="text" id="name" placeholder="Your Name" required />
+    <input type="email" id="email" placeholder="Your Email" required />
+    <input type="text" id="bookTitle" placeholder="Book Title" required />
+    <button type="submit" name="action" value="borrow">📥 Request</button>
+    <button type="submit" name="action" value="return">📤 Return</button>
+  </form>
+
+  <p id="message"></p>
+
+  <h3>➕ Add a New Book to Library</h3>
+  <form id="addForm">
+    <input type="text" id="newTitle" placeholder="Book Title" required />
+    <input type="text" id="newLocation" placeholder="Location (e.g., Shelf A)" required />
+    <button type="submit">➕ Add Book</button>
+  </form>
+
+  <script>
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbzFDGT9ADu59v8q3p4k4ocvTwDrokeVJJwlVoPUES1j4FwWeA5mIbO9JhaJEHSlp0GA/exec';
+
+    async function loadBooks() {
+      try {
+        document.getElementById("bookList").innerHTML = "<em>Loading...</em>";
+        const res = await fetch(apiUrl);
+        const books = await res.json();
+        let html = `<table><tr><th>Title</th><th>Location</th><th>Available</th></tr>`;
+        books.forEach(b => {
+          html += `<tr>
+            <td>${b.title}</td>
+            <td>${b.location}</td>
+            <td>${b.available ? '✅ Yes' : '❌ No'}</td>
+          </tr>`;
+        });
+        html += `</table>`;
+        document.getElementById("bookList").innerHTML = html;
+      } catch (err) {
+        document.getElementById("bookList").innerHTML = "<em>⚠️ Failed to load books</em>";
+      }
+    }
+
+    document.getElementById("actionForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const title = document.getElementById("bookTitle").value.trim();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const action = e.submitter.value;
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        body: JSON.stringify({ title, action, name, email }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const msg = await res.text();
+      document.getElementById("message").innerText = msg;
+      setTimeout(() => loadBooks(), 500);
+      e.target.reset();
+    });
+
+    document.getElementById("addForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const title = document.getElementById("newTitle").value.trim();
+      const location = document.getElementById("newLocation").value.trim();
+
+      if (!title || !location) {
+        alert("Please fill in both fields.");
+        return;
+      }
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: "addBook", title, location })
+      });
+
+      const msg = await res.text();
+      alert(msg);
+      loadBooks();
+      e.target.reset();
+    });
+
+    loadBooks();
+  </script>
+</body>
+</html>
